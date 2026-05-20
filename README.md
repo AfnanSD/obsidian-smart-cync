@@ -34,6 +34,7 @@ This creates a simple personal knowledge ingestion workflow with minimal manual 
 
 ## Architecture
 
+<img width="1011" height="581" alt="Obsidian Hub Agnet" src="https://github.com/user-attachments/assets/0127ec83-ac28-42dd-9892-50c56c697aad" />
 
 ---
 
