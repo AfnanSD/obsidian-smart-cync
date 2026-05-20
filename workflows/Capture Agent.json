@@ -1,0 +1,324 @@
+{
+  "name": "Capture Agent - Cloud",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -176,
+        16
+      ],
+      "id": "7de77f04-3a55-42ba-b207-7ab15e64072c",
+      "name": "Telegram Trigger",
+      "webhookId": "Webhook_ID",
+      "credentials": {
+        "telegramApi": {
+          "id": "TELEGRAM_API_ID",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "message sturcture expected:\nURL. type.length. extra?",
+        "height": 80
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        464,
+        -208
+      ],
+      "typeVersion": 1,
+      "id": "ebf177a8-34ad-4a30-a082-5047a37599f9",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f7546521-f19f-4b8f-ac91-798b6ee5214b",
+              "leftValue": "={{$node[\"get data\"].json[\"type\"]}}",
+              "rightValue": "youtube",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        240,
+        16
+      ],
+      "id": "e69eb6e8-bb35-4e24-9281-2634b0269145",
+      "name": "is it youtube"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nreturn items.map((item) => {\n\n  const text =\n    item.json?.message?.text || \"\";\n\n  // Split on \". \"  => [url, \"10 min\", \"blog\", \"title\"]\n  const parts = text.split('. ').map(p => p.trim()).filter(Boolean);\n\n  return {\n    json: {\n      url: parts[0] || \"\",\n      type: parts[1] || \"\",\n      length: parts[2] || \"\",\n      extra: parts[3] || \"\"      \n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        32,
+        16
+      ],
+      "id": "89e7732e-f2e8-4237-abd8-3c3df7abba84",
+      "name": "get data"
+    },
+    {
+      "parameters": {
+        "url": "=https://www.youtube.com/oembed?url={{$node[\"get data\"].json[\"url\"]}}&format=json",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        416,
+        -80
+      ],
+      "id": "5f94b6a5-eb2b-4c92-8f57-d34545e7ff90",
+      "name": "get youtube title"
+    },
+    {
+      "parameters": {
+        "url": "={{$node[\"get data\"].json[\"url\"]}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        416,
+        96
+      ],
+      "id": "d2bbb115-688b-4baf-8e5a-adbb89c3a56d",
+      "name": "get HTML"
+    },
+    {
+      "parameters": {
+        "jsCode": "// HTML from HTTP Request output\nconst html = $json.data || \"\";\n\n// Extract og:title first, fallback to <title>\nconst og = html.match(/<meta[^>]+property=[\"']og:title[\"'][^>]+content=[\"']([^\"']+)[\"']/i);\nconst titleTag = html.match(/<title[^>]*>([^<]+)<\\/title>/i);\n\nconst title =\n  (og && og[1] ? og[1].trim() : \"\") ||\n  (titleTag && titleTag[1] ? titleTag[1].trim() : \"\") ||\n  \"(title not found)\";\n\nreturn [{ json: { title } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        624,
+        96
+      ],
+      "id": "c7f5b586-ab50-47d7-8a39-84fbbc46d7b4",
+      "name": "extract title"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "= DOCUMENT_ID_VALUE",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "SHEET_NAME",
+          "mode": "url"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "url": "={{ $('get data').item.json.url }}",
+            "name": "={{ $json.title }}",
+            "synced": "FALSE",
+            "length": "={{$node[\"get data\"].json[\"length\"]}}",
+            "type": "={{$node[\"get data\"].json[\"type\"]}}",
+            "extra": "={{$node[\"get data\"].json[\"extra\"]}}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "url",
+              "displayName": "url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "synced",
+              "displayName": "synced",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "length",
+              "displayName": "length",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "type",
+              "displayName": "type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "extra",
+              "displayName": "extra",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        832,
+        16
+      ],
+      "id": "19bd0ba0-ae32-4997-9b6a-e631e3b625ec",
+      "name": "append row",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "GOOGLE_SHEETS_OAUTH_2_API_ID",
+          "name": "GOOGLE_SHEETS_CREDENTIAL"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "get data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "is it youtube": {
+      "main": [
+        [
+          {
+            "node": "get youtube title",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "get HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get data": {
+      "main": [
+        [
+          {
+            "node": "is it youtube",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get youtube title": {
+      "main": [
+        [
+          {
+            "node": "append row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get HTML": {
+      "main": [
+        [
+          {
+            "node": "extract title",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "extract title": {
+      "main": [
+        [
+          {
+            "node": "append row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "append row": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "4ae16103-61d8-4982-be12-24714bb8c1c8",
+  "id": "dh0ylq8llPTiKIHq",
+  "tags": []
+}

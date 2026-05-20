@@ -1,0 +1,274 @@
+{
+  "name": "Sync Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "const rows = $('get rows').all();\n\nreturn rows.map(item => ({\n  json: {\n    ...item.json,\n    synced: true\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        608,
+        0
+      ],
+      "id": "d9cf5f02-fe44-46de-b967-6d69b4bcde1b",
+      "name": "split rows"
+    },
+    {
+      "parameters": {
+        "path": "Webhook_ID",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        32,
+        0
+      ],
+      "id": "b8d73e74-a422-474e-92cc-82b3447b7cc5",
+      "name": "Webhook",
+      "webhookId": "Webhook_ID"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "OBSIDIAN_LOCAL_REST_API_URL",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "text/markdown"
+            },
+            {
+              "name": "Target-Type",
+              "value": "heading"
+            },
+            {
+              "name": "Target",
+              "value": "={{ $json.type || 'random' }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "text/markdown",
+        "body": "={{ \n`- [${$json.name}](${$json.url})` +\n($json.length ? `, ${$json.length}` : '') +\n($json.extra ? `\\n   - ${$json.extra}\\n` : '')\n}}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1
+            }
+          },
+          "allowUnauthorizedCerts": true
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        400,
+        0
+      ],
+      "id": "d8d19e32-cd60-4680-ab93-054771a75b16",
+      "name": "Obsidian call",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "HTTP_HEADER_AUTH_ID",
+          "name": "Header Auth account"
+        },
+        "httpBearerAuth": {
+          "id": "HTTP_BEARER_AUTH_ID",
+          "name": "Bearer Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "DOCUMENT_ID",
+          "mode": "list",
+          "cachedResultName": "DOCUMENT_ID",
+          "cachedResultUrl": "DOCUMENT_URL"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "SHEET_NAME",
+          "cachedResultUrl": "SHEET_URL"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": "={{ $json.row_number }}",
+            "synced": "={{ $json.synced }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "url",
+              "displayName": "url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "synced",
+              "displayName": "synced",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        816,
+        0
+      ],
+      "id": "fd59aa83-534b-4dae-a354-b0564ea415ed",
+      "name": "update rows",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "GOOGLE_SHEETS_OAUTH_2_API_ID",
+          "name": "GOOGLE_SHEETS_CREDENTIAL"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "DOCUMENT_ID",
+          "mode": "list",
+          "cachedResultName": "DOCUMENT_NAME",
+          "cachedResultUrl": "DOCUMENT_URL"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "SHEET_NAME",
+          "cachedResultUrl": "SHEET_URL"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "synced",
+              "lookupValue": "false"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        208,
+        0
+      ],
+      "id": "01d5cf17-3ddd-4764-930c-73a690366afc",
+      "name": "get rows",
+      "retryOnFail": false,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "GOOGLE_SHEETS_OAUTH_2_API_ID",
+          "name": "GOOGLE_SHEETS_CREDENTIAL"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "split rows": {
+      "main": [
+        [
+          {
+            "node": "update rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "get rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Obsidian call": {
+      "main": [
+        [
+          {
+            "node": "split rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get rows": {
+      "main": [
+        [
+          {
+            "node": "Obsidian call",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "binaryMode": "separate"
+  },
+  "versionId": "32e9cf0f-2956-42dd-b3df-09168ef48609",
+  "id": "p0f14K9uxopkgNDTskL_0",
+  "tags": []
+}
